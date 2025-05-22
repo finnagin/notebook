@@ -138,6 +138,10 @@ jobs:
             py_cmd: python3
           - os: ubuntu-latest
             py_cmd: python
+        exclude:
+          - os: windows-11-arm # setup-python only supports 3.11+ on win-arm64
+            python: '3.9'
+        
     steps:
       - name: Install Python
         uses: actions/setup-python@v5
@@ -148,6 +152,14 @@ jobs:
         with:
           name: notebook-dist-${{ github.run_number }}
           path: ./dist
+      # rust toolchain is not currently installed on windopws arm64 images https://github.com/actions/partner-runner-images/issues/77
+      - if: ${{ matrix.os == 'windows-11-arm' }}
+        name: Setup rust
+        id: setup-rust
+        run: |
+          Invoke-WebRequest https://static.rust-lang.org/rustup/dist/aarch64-pc-windows-msvc/rustup-init.exe -OutFile .\rustup-init.exe
+          .\rustup-init.exe -y
+          Add-Content $env:GITHUB_PATH "$env:USERPROFILE\.cargo\bin"
       - name: Install the prerequisites
         run: |
           ${{ matrix.py_cmd }} -m pip install -U pip wheel
